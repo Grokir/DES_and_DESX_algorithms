@@ -1,4 +1,4 @@
-#include "des.h"
+#include "des.hpp"
 
 #include <bitset>
 #include <iostream>
@@ -6,8 +6,6 @@
 /// PRUBLIC METHODS //////////////////////////////////////////////////////
 
 DES::DES() {
-  // key.resize (  size_of_key  / size_of_char ); /// 7 символов
-  // msg.resize ( size_of_block / size_of_char ); /// 8 символов
   binkey.resize( size_of_block );
   binmsg.resize( size_of_block );
 };
@@ -15,15 +13,11 @@ DES::DES() {
 
 void DES::setKEY(const std::string& key) {
   this->clear_bin_str(this->binkey);
-  // this->key.clear();
-  // this->key.resize( size_of_key  / size_of_char ); /// 7 символов
 
   std::string binstr;
   std::size_t k = 0;
   
   for(int i = 0; ( i < ( size_of_key / size_of_char ) ) && ( i < key.size() ); i++){
-    // this->key[i] = key[i];
-
     binstr = std::bitset<8>(key[i]).to_string();
     
     for(int j = 0; j < binstr.size(); j++){
@@ -35,15 +29,11 @@ void DES::setKEY(const std::string& key) {
 
 void DES::setMSG(const std::string& msg) {
   this->clear_bin_str(this->binmsg);
-  // this->msg.clear();
-  // this->msg.resize( size_of_block / size_of_char ); /// 8 символов
 
   std::string binstr;
   std::size_t k = 0;
   int i = 0;
   for(; ( i < ( size_of_block / size_of_char ) ) && ( i < msg.size() ); i++){
-    // this->msg[i] = msg[i];
-    
     binstr = std::bitset<8>(msg[i]).to_string();
 
     for(int j = 0; j < binstr.size(); j++){
@@ -106,6 +96,10 @@ const uint DES::countKeyBits() const {
   return size_of_key;
 };
 
+const uint DES::countKeySourceBits() const {
+  return size_of_src_key;
+};
+
 const uint DES::countKeySymbols() const {
   return size_of_key / size_of_char;
 };
@@ -114,8 +108,8 @@ bool DES::encrypt() {
 
   std::vector<uint> tmpkey = this->binkey;
 
-  std::vector<uint> L       ( size_of_block / 2 );
-  std::vector<uint> R       ( size_of_block / 2 );
+  std::vector<uint> L       ( this->size_of_block / 2 );
+  std::vector<uint> R       ( this->size_of_block / 2 );
 
   uint j = 0;
   
@@ -127,12 +121,12 @@ bool DES::encrypt() {
     /// производим 16 раундов шифрования
     /// с циклическим сдвигом ключа
   
-    for(uint i = 0; i < round_count; i++)
+    for(uint i = 0; i < this->round_count; i++)
       tmpkey = one_encrypt_round( tmpkey );
     
     /// копируем биты сообщения в L и в R
-    for(uint i = 0; i < size_of_block; i++){
-      if( i < size_of_block / 2 )
+    for(uint i = 0; i < this->size_of_block; i++){
+      if( i < this->size_of_block / 2 )
         L[i] = this->binmsg[i];
       else {
         R[j] = this->binmsg[i];
@@ -142,8 +136,8 @@ bool DES::encrypt() {
   
     /// И производим 32-х битовый обмен
     j = 0;
-    for(uint i = 0; i < size_of_block; i++){
-      if( i < size_of_block / 2 )
+    for(uint i = 0; i < this->size_of_block; i++){
+      if( i < this->size_of_block / 2 )
         this->binmsg[i] = R[i];
       else {
         this->binmsg[i] = L[j];
@@ -162,8 +156,8 @@ bool DES::encrypt() {
 bool DES::decrypt() {
 
   std::vector<std::vector<uint>> tmpkey = preparing_keys( this->binkey );
-  std::vector<uint> L       ( size_of_block / 2 );
-  std::vector<uint> R       ( size_of_block / 2 );
+  std::vector<uint> L       ( this->size_of_block / 2 );
+  std::vector<uint> R       ( this->size_of_block / 2 );
 
   uint j = 0;
   
@@ -174,12 +168,12 @@ bool DES::decrypt() {
     // производим 16 раундов шифрования
     // с циклическим сдвигом ключа
 
-      for(int i = round_count - 1; i >= 0; i--)
+      for(int i = this->round_count - 1; i >= 0; i--)
         one_decrypt_round( tmpkey[i] );
 
     /// копируем биты сообщения в L и в R
-    for(uint i = 0; i < size_of_block; i++){
-      if( i < size_of_block / 2 )
+    for(uint i = 0; i < this->size_of_block; i++){
+      if( i < this->size_of_block / 2 )
         L[i] = this->binmsg[i];
       else {
         R[j] = this->binmsg[i];
@@ -189,8 +183,8 @@ bool DES::decrypt() {
 
     /// И производим 32-х битовый обмен
     j = 0;
-    for(uint i = 0; i < size_of_block; i++){
-      if( i < size_of_block / 2 )
+    for(uint i = 0; i < this->size_of_block; i++){
+      if( i < this->size_of_block / 2 )
         this->binmsg[i] = R[i];
       else {
         this->binmsg[i] = L[j];
