@@ -1,4 +1,4 @@
-#include "desx.h"
+#include "desx.hpp"
 
 #include <bitset>
 
@@ -149,6 +149,10 @@ const uint DESX::countKeyBits() const {
   return size_of_key;
 };
 
+const uint DESX::countKeySourceBits() const {
+  return size_of_src_key;
+};
+
 const uint DESX::countKeySymbols() const {
   return size_of_key / size_of_char;
 };
@@ -157,8 +161,8 @@ bool DESX::encrypt() {
   
   std::vector<uint> tmpkey = this->binkey;
 
-  std::vector<uint> L       ( size_of_block / 2 );
-  std::vector<uint> R       ( size_of_block / 2 );
+  std::vector<uint> L       ( this->size_of_block / 2 );
+  std::vector<uint> R       ( this->size_of_block / 2 );
 
   uint j = 0;
   
@@ -174,8 +178,8 @@ bool DESX::encrypt() {
       tmpkey = one_encrypt_round( tmpkey );
     
     /// копируем биты сообщения в L и в R
-    for(uint i = 0; i < size_of_block; i++){
-      if( i < size_of_block / 2 )
+    for(uint i = 0; i < this->size_of_block; i++){
+      if( i < this->size_of_block / 2 )
         L[i] = this->binmsg[i];
       else {
         R[j] = this->binmsg[i];
@@ -185,8 +189,8 @@ bool DESX::encrypt() {
     
     /// И производим 32-х битовый обмен
     j = 0;
-    for(uint i = 0; i < size_of_block; i++){
-      if( i < size_of_block / 2 )
+    for(uint i = 0; i < this->size_of_block; i++){
+      if( i < this->size_of_block / 2 )
         this->binmsg[i] = R[i];
       else {
         this->binmsg[i] = L[j];
@@ -207,8 +211,8 @@ bool DESX::encrypt() {
 
 bool DESX::decrypt() {
   std::vector<std::vector<uint>> tmpkey = preparing_keys( this->binkey );
-  std::vector<uint> L       ( size_of_block / 2 );
-  std::vector<uint> R       ( size_of_block / 2 );
+  std::vector<uint> L       ( this->size_of_block / 2 );
+  std::vector<uint> R       ( this->size_of_block / 2 );
 
   uint j = 0;
     
@@ -220,12 +224,12 @@ bool DESX::decrypt() {
     // производим 16 раундов расшифрования
     // с циклическим изъятием ключа из стека ключей
 
-    for(int i = round_count - 1; i >= 0; i--)
+    for(int i = this->round_count - 1; i >= 0; i--)
       one_decrypt_round( tmpkey[i] );    
     
     /// копируем биты сообщения в L и в R
-    for(uint i = 0; i < size_of_block; i++){
-      if( i < size_of_block / 2 )
+    for(uint i = 0; i < this->size_of_block; i++){
+      if( i < this->size_of_block / 2 )
         L[i] = this->binmsg[i];
       else {
         R[j] = this->binmsg[i];
@@ -235,8 +239,8 @@ bool DESX::decrypt() {
     
     /// И производим 32-х битовый обмен
     j = 0;
-    for(uint i = 0; i < size_of_block; i++){
-      if( i < size_of_block / 2 )
+    for(uint i = 0; i < this->size_of_block; i++){
+      if( i < this->size_of_block / 2 )
         this->binmsg[i] = R[i];
       else {
         this->binmsg[i] = L[j];
@@ -692,7 +696,7 @@ std::vector<uint>/* 32 bits */ DESX::perm_with_choice(/* 48 bits */const std::ve
           {13,  2,  8,  4,  6, 15, 11,  1, 10,  9,  3, 14,  5,  0, 12,  7},
           { 1, 15, 13,  8, 10,  3,  7,  4, 12,  5,  6, 11,  0, 14,  9,  2},
           { 7, 11,  4,  1,  9, 12, 14,  2,  0,  6, 10, 13, 15,  3,  5,  8},
-          { 2,  1, 14,  7,  4, 10,  8, 13, 15, 12,  9,  0,  3,  5,  6,}
+          { 2,  1, 14,  7,  4, 10,  8, 13, 15, 12,  9,  0,  3,  5,  6, 11}
        };
 
   auto lambda_elem_selection = [this](std::size_t begin, std::size_t end, const std::vector<uint> &vec, const std::vector<std::vector<ulong>>& S){
